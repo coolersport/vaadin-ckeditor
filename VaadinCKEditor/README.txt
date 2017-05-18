@@ -63,6 +63,11 @@ under the Creative Commons Attribution 3.0 License.
   CHANGELOG
   =========
 
+7.11.2-patch1 (18 May 2017)
+- Fixed https://github.com/OpenESignForms/vaadin-ckeditor/issues/60
+- Fixed https://github.com/OpenESignForms/vaadin-ckeditor/issues/61
+- Upgraded to Vaadin 7.7.9.
+
 7.11.2 (28 April 2017)
 - Accepted patch from https://github.com/jpikl (thank you!) to fix issue 36 with setVisible() and multiple editors 
   (https://github.com/OpenESignForms/vaadin-ckeditor/issues/36).  
