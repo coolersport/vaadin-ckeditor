@@ -61,6 +61,11 @@ under the Creative Commons Attribution 3.0 License.
   CHANGELOG
   =========
 
+1.8.2-patch1 (18 May 2017)
+- Fixed https://github.com/OpenESignForms/vaadin-ckeditor/issues/60
+- Fixed https://github.com/OpenESignForms/vaadin-ckeditor/issues/61
+- Upgraded to Vaadin 6.8.18 and CKEditor 4.6.2.
+
 1.8.2 (23 April 2013)
 - Upgraded to CKEditor 4.1.1. This patch allows previous pasteFromWord* settings to work.
 - Added ability to set pasteFromWordPromptCleanup: config.setPasteFromWordPromptCleanup(boolean)
@@ -172,7 +177,7 @@ under the Creative Commons Attribution 3.0 License.
 
 1.6.0 (8 December 2011)
  - Updated the sample application to show the 100% height fixed by Stefan.
- *** All of the following feature upgrades in this release were contributed by Stefan Meißner, davengo GmbH (Thanks again!) ***
+ *** All of the following feature upgrades in this release were contributed by Stefan Meiï¿½ner, davengo GmbH (Thanks again!) ***
  - Correct sizing of the component using component.setWidth(..., ...) and component.setHeight(..., ...). 
    Vaadin layouts do all the calculations of 100% height and widths and so on and give you the correct sizes.
  - Adds the width and the height to the inPage configuration, if it is not set yet so the component is rendered 
@@ -187,7 +192,7 @@ under the Creative Commons Attribution 3.0 License.
 1.5.0 (1 December 2011)
  - Upgraded to Vaadin 6.7.2.
  - Removed Config.setStylesCombo_stylesSet() method as it was previously deprecated. Use Config.setStylesSet() instead.
- *** All of the following feature upgrades in this release were contributed by Stefan Meißner, davengo GmbH (Thanks!) ***
+ *** All of the following feature upgrades in this release were contributed by Stefan Meiï¿½ner, davengo GmbH (Thanks!) ***
  - Focus and TabIndex (implementing Focusable)
  - CKEditorField.insertHtml (insert html at the current selection)
  - CKEditorField.insertText (insert text at the current selection)
@@ -214,7 +219,7 @@ under the Creative Commons Attribution 3.0 License.
 1.4 (14 June 2011)
  - Changed CKEditorConfig setStylesCombo_stylesSet() to use name setStylesSet() as this was changed back in CKEditor 3.3 apparently. 
    The old name is deprecated and will be removed shortly.
- - Added config options from André (google code user zorknika)
+ - Added config options from Andrï¿½ (google code user zorknika)
    config.setSkin(String newSkin)
    config.setFilebrowserFlashBrowseLinkUrl(String url)
    config.setFilebrowserImageBrowseLinkUrl(String url)
