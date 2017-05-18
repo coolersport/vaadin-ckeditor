@@ -77,20 +77,16 @@ public class CKEditorTextField extends AbstractField<String>
 	}
 	
 	@Override
-    public void setValue(String newValue) throws Property.ReadOnlyException, Converter.ConversionException {
-    	if ( newValue == null )
-    		newValue = "";
-    	super.setValue(newValue, false);
-    	requestRepaint();
+	protected void setInternalValue(String newValue) {
+		super.setInternalValue(newValue);
     	textIsDirty = true;
     }
 	
- 	@Override
- 	public void setPropertyDataSource(Property newDataSource) {
- 		super.setPropertyDataSource(newDataSource);
- 		markAsDirty();
-     	textIsDirty = true;
- 	}
+	@Override
+	protected void fireValueChange(boolean repaintIsNotNeeded) {
+		super.fireValueChange(repaintIsNotNeeded);
+		textIsDirty = true;
+	}
  
  	@Override
 	public void beforeClientResponse(boolean initial) {
@@ -276,6 +272,7 @@ public class CKEditorTextField extends AbstractField<String>
 	@Override
 	public void detach() {
 		super.detach();
+		textIsDirty = true;
 	}
 	
 	// Part of Focusable
