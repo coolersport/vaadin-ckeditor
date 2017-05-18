@@ -68,6 +68,7 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 	
 	private String inPageConfig = null;
 	private String dataBeforeEdit = null;
+	private boolean resetDataBeforeEdit = false;
 	
 	private boolean immediate;
 	private boolean readOnly;
@@ -243,7 +244,7 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 			// editor data and some options are set when the instance is ready....
 		} else if ( ckEditorIsReady ) {
 			if ( needsDataUpdate ) {
-				ckEditor.setData(dataBeforeEdit);
+				setEditorData();
 			}
 			
 			if ( needsProtectedBodyUpdate ) {
@@ -269,6 +270,12 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 		
 	}
 
+	private void setEditorData() {
+		// flag to take the updated version for later modification check
+		resetDataBeforeEdit = true;
+		ckEditor.setData(dataBeforeEdit);
+	}
+	
 	private void loadEditor() {
 		CKEditorService.loadLibrary(new ScheduledCommand() {
 			@Override
@@ -370,7 +377,7 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 		}
 		
 		if ( dataBeforeEdit != null ) {
-			ckEditor.setData(dataBeforeEdit);
+			setEditorData();
 		}
 				
 		ckEditorIsReady = true;
@@ -447,6 +454,8 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 	@Override
 	public void onDataReady() {
 		if ( ckEditor != null ) {
+			if (resetDataBeforeEdit)
+				dataBeforeEdit = ckEditor.getData(true);
 			ckEditor.protectBody(protectedBody);
 		}
 	}
