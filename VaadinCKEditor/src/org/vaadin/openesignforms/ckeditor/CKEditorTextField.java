@@ -8,6 +8,9 @@
 //
 package org.vaadin.openesignforms.ckeditor;
 
+import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,6 +24,7 @@ import com.vaadin.event.FieldEvents.FocusEvent;
 import com.vaadin.event.FieldEvents.FocusListener;
 import com.vaadin.terminal.PaintException;
 import com.vaadin.terminal.PaintTarget;
+import com.vaadin.tools.ReflectTools;
 import com.vaadin.ui.AbstractField;
 import com.vaadin.ui.Component;
 
@@ -40,6 +44,9 @@ public class CKEditorTextField extends AbstractField
 	private boolean protectedBody = false;
 	private boolean viewWithoutEditor = false;
 	private boolean focusRequested = false;
+	protected LinkedList<VaadinSaveListener> vaadinSaveListenerList;
+
+	private boolean textIsDirty = true;
 
 	public CKEditorTextField() {
 		super.setValue("");
@@ -54,6 +61,14 @@ public class CKEditorTextField extends AbstractField
 	
 	public void setConfig(CKEditorConfig config) {
 		this.config = config;
+		if ( config.isReadOnly() )
+			setReadOnly(true);
+	}
+	
+	public CKEditorTextField(CKEditorConfig config, String initialValue) {
+		this();
+		setValue(initialValue);
+		setConfig(config);
 	}
 	
 	public String getVersion() {
@@ -66,15 +81,25 @@ public class CKEditorTextField extends AbstractField
     		newValue = "";
     	super.setValue(newValue.toString(), false);
     	requestRepaint();
+    	textIsDirty = true;
     }
 	
+	@Override
+	public void setPropertyDataSource(Property newDataSource) {
+		super.setPropertyDataSource(newDataSource);
+     	textIsDirty = true;
+	}
+
 	@Override
 	public void paintContent(PaintTarget target) throws PaintException {
 		super.paintContent(target);
 		
-		Object currValueObject = getValue();
-		String currValue = currValueObject == null ? "" : currValueObject.toString();
-		target.addVariable(this, VCKEditorTextField.VAR_TEXT, currValue);
+		if(textIsDirty) {
+			Object currValueObject = getValue();
+			String currValue = currValueObject == null ? "" : currValueObject.toString();
+			target.addVariable(this, VCKEditorTextField.VAR_TEXT, currValue);
+			textIsDirty = false;
+		}
 		
 		target.addAttribute(VCKEditorTextField.ATTR_READONLY, isReadOnly());
 		target.addAttribute(VCKEditorTextField.ATTR_VIEW_WITHOUT_EDITOR, isViewWithoutEditor());
@@ -97,6 +122,17 @@ public class CKEditorTextField extends AbstractField
 				target.addAttribute(VCKEditorTextField.ATTR_WRITER_INDENTATIONCHARS, config.getWriterIndentationChars());
 			}
 			
+			if ( config.hasKeystrokeMappings() ) {
+				int i = 0;
+				Set<Integer> keystrokeSet = config.getKeystrokes();
+				for( Integer keystroke : keystrokeSet ) {
+					target.addAttribute(VCKEditorTextField.ATTR_KEYSTROKES_KEYSTROKE+i, keystroke);
+					target.addAttribute(VCKEditorTextField.ATTR_KEYSTROKES_COMMAND+i, config.getKeystrokeCommandByKeystroke(keystroke));
+					++i;
+				}
+			}
+			
+
 			if ( config.hasProtectedSource() ) {
 				int i = 0;
 				for( String protectedSourceRegex : config.getProtectedSource() ) {
@@ -156,6 +192,29 @@ public class CKEditorTextField extends AbstractField
                 setValue(newValue, true);
             }
         }
+        
+        if (variables.containsKey(FocusEvent.EVENT_ID)) {
+			//System.out.println("------------------------------");
+    		//System.out.println("*** TRACE FROM CLIENT changeVariables() - FOCUS - " + System.currentTimeMillis());
+            fireEvent(new FocusEvent(this));
+        }
+        if (variables.containsKey(BlurEvent.EVENT_ID)) {
+    		//System.out.println("*** TRACE FROM CLIENT changeVariables() - BLUR - " + System.currentTimeMillis());
+            fireEvent(new BlurEvent(this));
+        }
+        
+        if (variables.containsKey(SelectionChangeEvent.EVENT_ID)) {
+        	Object selectedHtmlObject = variables.get(SelectionChangeEvent.EVENT_ID);
+            if ( selectedHtmlObject != null ) {
+            	String selectedHtml = selectedHtmlObject.toString();
+            	fireEvent(new SelectionChangeEvent(this,selectedHtml));
+            }
+        }
+
+        // See if the vaadinsave button was pressed
+        if (variables.containsKey(VCKEditorTextField.VAR_VAADIN_SAVE_BUTTON_PRESSED) && ! isReadOnly()) {
+        	notifyVaadinSaveListeners();
+        }
     }
 
 
@@ -184,6 +243,16 @@ public class CKEditorTextField extends AbstractField
 	@Override
 	public void removeListener(FocusListener listener) {
         removeListener(FocusEvent.EVENT_ID, FocusEvent.class, listener);
+	}
+	
+	/**
+	 * @param listener
+	 */
+	public void addSelectionChangeListener(SelectionChangeListener listener) {
+		addListener(SelectionChangeEvent.EVENT_ID, SelectionChangeEvent.class, listener, SelectionChangeListener.selectionChangeMethod);
+	}
+	public void removeSelectionChangeListener(SelectionChangeListener listener) {
+		removeListener(SelectionChangeEvent.EVENT_ID, SelectionChangeEvent.class, listener);
 	}
 	
 	@Override
@@ -240,4 +309,57 @@ public class CKEditorTextField extends AbstractField
 	public boolean isProtectedBody() {
 		return protectedBody;
 	}
+	
+	public synchronized void addVaadinSaveListener(VaadinSaveListener listener) {
+		if ( vaadinSaveListenerList == null )
+			vaadinSaveListenerList = new LinkedList<VaadinSaveListener>();
+		vaadinSaveListenerList.add(listener);
+	}
+	public synchronized void removeVaadinSaveListener(VaadinSaveListener listener) {
+		if ( vaadinSaveListenerList != null )
+			vaadinSaveListenerList.remove(listener);
+	}
+	synchronized void notifyVaadinSaveListeners() {
+		if ( vaadinSaveListenerList != null ) {
+			for( VaadinSaveListener listener : vaadinSaveListenerList )
+				listener.vaadinSave(this);
+		}
+	}
+	
+	public interface VaadinSaveListener extends Serializable {
+		/**
+	     * Notifies this listener that the vaadinsave button in the editor was pressed.
+	     * 
+	     * @param editor the CKEditorTextField that was saved
+	     */
+	    public void vaadinSave(CKEditorTextField editor);
+	}
+	
+	
+    @SuppressWarnings("serial")
+    public static class SelectionChangeEvent extends Component.Event {
+        public static final String EVENT_ID = VCKEditorTextField.EVENT_SELECTION_CHANGE;
+
+        private String selectedHtml;
+        
+        public SelectionChangeEvent(Component source, String selectedHtml) {
+            super(source);
+            this.selectedHtml = selectedHtml;
+        }
+        
+        public String getSelectedHtml() {
+        	return selectedHtml;
+        }
+        
+        public boolean hasSelectedHtml() {
+        	return ! "".equals(selectedHtml);
+        }
+    }
+
+    public interface SelectionChangeListener extends Serializable {
+        public static final Method selectionChangeMethod = ReflectTools.findMethod(
+                SelectionChangeListener.class, "selectionChange", SelectionChangeEvent.class);
+        
+        public void selectionChange(SelectionChangeEvent event);
+    }
 }

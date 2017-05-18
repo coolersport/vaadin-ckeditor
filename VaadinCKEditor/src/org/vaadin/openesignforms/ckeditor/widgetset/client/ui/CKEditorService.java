@@ -27,14 +27,14 @@ public class CKEditorService {
 	private static boolean libraryLoaded = false;
 	private static List<ScheduledCommand> afterLoadedStack = new ArrayList<ScheduledCommand>();
 	
-	public static void loadLibrary(ScheduledCommand afterLoad) {
-		if (!libraryLoadInited) {
+	public static synchronized void loadLibrary(ScheduledCommand afterLoad) {
+		if (! libraryLoadInited) {
+			libraryLoadInited = true;
 			String url = GWT.getModuleBaseURL() + "ckeditor/ckeditor.js";
 			ScriptElement se = Document.get().createScriptElement();
 			se.setSrc(url);
 			se.setType("text/javascript");
 			Document.get().getElementsByTagName("head").getItem(0).appendChild(se);
-			libraryLoadInited = true;
 			Scheduler.get().scheduleFixedDelay(new RepeatingCommand() {				
 				@Override
 				public boolean execute() {
@@ -111,6 +111,7 @@ public class CKEditorService {
 	// because those operations resulted in BLUR then FOCUS events in rapid succession, causing the UI to update.
 	// But the 200 value is too long and we find that often the button acts faster than the BLUR can fire from CKEditor
 	// so Vaadin doesn't get the latest contents.
+	// Even though CKEditor 4.2 introduced a change event, it doesn't appear to fire if you stay in SOURCE mode, which many people do use.
 	public native static void reduceBlurDelay()
 	/*-{
 		$wnd.CKEDITOR.focusManager._.blurDelay = 20; // the default is 200 even if the documentation says it's only 100
@@ -133,7 +134,6 @@ public class CKEditorService {
 	 	var styles = @org.vaadin.openesignforms.ckeditor.widgetset.client.ui.CKEditorService::convertJavaScriptStringToObject(Ljava/lang/String;)(jsStyles);
 		$wnd.CKEDITOR.addStylesSet(name,styles);
 	}-*/;
-	
 	
 	// TODO: Never tested yet
 	public native static void addTemplates(String name, String jsDefinition)
@@ -159,6 +159,7 @@ public class CKEditorService {
 	public interface CKEditorListener {
 		public void onInstanceReady();
 		public void onChange();
+		public void onSelectionChange();
 		public void onModeChange(String mode);
 		public void onDataReady();
 		public void onBlur();
