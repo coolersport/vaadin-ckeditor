@@ -267,6 +267,7 @@ public class CKEditorTextField extends AbstractField
 	@Override
 	public void detach() {
 		super.detach();
+		textIsDirty = true;
 	}
 	
 	// Part of Focusable
