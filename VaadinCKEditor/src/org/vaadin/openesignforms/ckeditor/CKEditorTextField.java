@@ -76,18 +76,15 @@ public class CKEditorTextField extends AbstractField
 	}
 	
 	@Override
-    public void setValue(Object newValue) throws Property.ReadOnlyException, Property.ConversionException {
-    	if ( newValue == null )
-    		newValue = "";
-    	super.setValue(newValue.toString(), false);
-    	requestRepaint();
+	protected void setInternalValue(Object newValue) {
+		super.setInternalValue(newValue);
     	textIsDirty = true;
     }
 	
 	@Override
-	public void setPropertyDataSource(Property newDataSource) {
-		super.setPropertyDataSource(newDataSource);
-     	textIsDirty = true;
+	protected void fireValueChange(boolean repaintIsNotNeeded) {
+		super.fireValueChange(repaintIsNotNeeded);
+		textIsDirty = true;
 	}
 
 	@Override
