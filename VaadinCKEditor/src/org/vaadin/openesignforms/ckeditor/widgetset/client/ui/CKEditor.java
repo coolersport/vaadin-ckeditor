@@ -30,6 +30,11 @@ public class CKEditor extends JavaScriptObject {
 		return this.getData();
 	}-*/;
 
+	public final native String getData(boolean internal)
+	/*-{
+		return this.getData(internal);
+	}-*/;
+
 	public final native void setData(String htmlData)
 	/*-{
 		return this.setData(htmlData);
