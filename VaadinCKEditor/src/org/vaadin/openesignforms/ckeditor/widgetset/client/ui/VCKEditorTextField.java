@@ -454,8 +454,10 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 	@Override
 	public void onDataReady() {
 		if ( ckEditor != null ) {
-			if (resetDataBeforeEdit)
+			if (resetDataBeforeEdit) {
 				dataBeforeEdit = ckEditor.getData(true);
+				resetDataBeforeEdit = false;
+			}
 			ckEditor.protectBody(protectedBody);
 		}
 	}
