@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2013 Yozons, Inc.
+// Copyright (C) 2010-2017 Yozons, Inc.
 // CKEditor for Vaadin- Widget linkage for using CKEditor within a Vaadin application.
 //
 // This software is released under the Apache License 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
@@ -64,15 +64,15 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 	
 	private String inPageConfig = null;
 	private String dataBeforeEdit = null;
-	private boolean resetDataBeforeEdit = false;
+	private boolean ignoreDataChangesUntilReady = false;
 	
 	private boolean immediate;
 	private boolean readOnly;
 	private boolean viewWithoutEditor; // Set to true and the editor will not be displayed, just the contents.
 	private boolean protectedBody;
-	private boolean widgetUnloaded;
 	
 	private CKEditor ckEditor = null;
+	private boolean ckEditorIsBeingLoaded = false;
 	private boolean ckEditorIsReady = false;
 	//private boolean resizeListenerInPlace = false;
 	private boolean notifyBlankSelection = false;
@@ -176,18 +176,19 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 				if ( ! needsDataUpdate ) {
 					dataBeforeEdit = ckEditor.getData();
 				}
-				ckEditor.destroy(true);
-				ckEditorIsReady = false;
-				ckEditor = null;
+				unloadEditor();
 			}
 			getElement().setInnerHTML(dataBeforeEdit);
 		}
 		else if ( ckEditor == null ) {
 			getElement().setInnerHTML(""); // in case we put contents in there while in viewWithoutEditor mode
 			
-			inPageConfig = uidl.hasAttribute(ATTR_INPAGECONFIG) ? uidl.getStringAttribute(ATTR_INPAGECONFIG) : null;
+			// If we have the config, use it, otherwise attempt to use any prior config we have
+			if ( uidl.hasAttribute(ATTR_INPAGECONFIG) )
+				inPageConfig = uidl.getStringAttribute(ATTR_INPAGECONFIG); 
 			
-			writerIndentationChars = uidl.hasAttribute(ATTR_WRITER_INDENTATIONCHARS) ? uidl.getStringAttribute(ATTR_WRITER_INDENTATIONCHARS) : null;
+			if ( uidl.hasAttribute(ATTR_WRITER_INDENTATIONCHARS) )
+				writerIndentationChars = uidl.getStringAttribute(ATTR_WRITER_INDENTATIONCHARS);
 			
 			if ( uidl.hasAttribute(ATTR_FOCUS) ) {
 				setFocus(uidl.getBooleanAttribute(ATTR_FOCUS));
@@ -199,6 +200,8 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 				if ( ! uidl.hasAttribute(ATTR_WRITERRULES_TAGNAME+i)  ) {
 					break;
 				}
+				if ( i == 0 && writerRules != null )
+					writerRules.clear();
 				// Save the rules until our instance is ready
 				String tagName = uidl.getStringAttribute(ATTR_WRITERRULES_TAGNAME+i);
 				String jsRule  = uidl.getStringAttribute(ATTR_WRITERRULES_JSRULE+i);
@@ -215,6 +218,8 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 				if ( ! uidl.hasAttribute(ATTR_KEYSTROKES_KEYSTROKE+i)  ) {
 					break;
 				}
+				if ( i == 0 && keystrokeMappings != null )
+					keystrokeMappings.clear();
 				// Save the keystrokes until our instance is ready
 				int keystroke = uidl.getIntAttribute(ATTR_KEYSTROKES_KEYSTROKE+i);
 				String command  = uidl.getStringAttribute(ATTR_KEYSTROKES_COMMAND+i);
@@ -231,6 +236,8 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 				if ( ! uidl.hasAttribute(ATTR_PROTECTED_SOURCE+i)  ) {
 					break;
 				}
+				if ( i == 0 && protectedSourceList != null )
+					protectedSourceList.clear();
 				// Save the regex until our instance is ready
 				String regex = uidl.getStringAttribute(ATTR_PROTECTED_SOURCE+i);
 				if ( protectedSourceList == null ) {
@@ -245,7 +252,7 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 			// editor data and some options are set when the instance is ready....
 		} else if ( ckEditorIsReady ) {
 			if ( needsDataUpdate ) {
-				setEditorData();
+				setEditorData(dataBeforeEdit);
 			}
 			
 			if ( needsProtectedBodyUpdate ) {
@@ -270,25 +277,44 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 		}
 		
 	}
-
-	private void setEditorData() {
-		// flag to take the updated version for later modification check
-		resetDataBeforeEdit = true;
-		ckEditor.setData(dataBeforeEdit);
+	
+	void setEditorData(String html) {
+		if ( ckEditorIsReady ) {
+			dataBeforeEdit = html;
+			ignoreDataChangesUntilReady = true;
+			ckEditor.setData(dataBeforeEdit); // We reset our flag above when the editor tells us the data is ready
+		}
 	}
 	
-	private void loadEditor() {
-		CKEditorService.loadLibrary(new ScheduledCommand() {
-			@Override
-			public void execute() {
-				ckEditor = (CKEditor) CKEditorService.loadEditor(
-						getElement().getId(),
-						VCKEditorTextField.this,
-						inPageConfig,
-						VCKEditorTextField.super.getOffsetWidth(),
-						VCKEditorTextField.super.getOffsetHeight());
-			}
-		});
+	void unloadEditor() {
+		if ( ckEditor != null ) {
+			ckEditor.destroy(true);
+			ckEditor = null;
+		}
+		dataBeforeEdit = null;
+		ignoreDataChangesUntilReady = false;
+		ckEditorIsReady = false;
+		ckEditorIsBeingLoaded = false;
+		setFocusAfterReady = false;
+		setTabIndexAfterReady = false;
+	}
+	
+	void loadEditor() {
+		if ( ckEditor == null && inPageConfig != null && ! ckEditorIsBeingLoaded ) {
+			ckEditorIsBeingLoaded = true;
+			CKEditorService.loadLibrary(new ScheduledCommand() {
+				@Override
+				public void execute() {
+					ckEditor = (CKEditor)CKEditorService.loadEditor(
+							paintableId,
+							VCKEditorTextField.this,
+							inPageConfig,
+							VCKEditorTextField.super.getOffsetWidth(),
+							VCKEditorTextField.super.getOffsetHeight());
+					ckEditorIsBeingLoaded = false; // Don't need this as we have ckEditor set now.
+				}
+			});
+		}
 	}
 
 	// Listener callback
@@ -300,6 +326,7 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 			if ( ! data.equals(dataBeforeEdit) ) {
 				clientToServer.updateVariable(paintableId, VAR_TEXT, data, false);
 				dataBeforeEdit = data; // update our image since we sent it to the server
+				ignoreDataChangesUntilReady = false; // If they give us data by saving, we don't ignore whatever it is
 			}
 			clientToServer.updateVariable(paintableId, VAR_VAADIN_SAVE_BUTTON_PRESSED,"",false); // inform that the button was pressed too
 			clientToServer.sendPendingVariableChanges(); // ensure anything queued up goes now on SAVE
@@ -319,7 +346,7 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 			
 			// Even though CKEditor 4.2 introduced a change event, it doesn't appear to fire if the user stays in SOURCE mode,
 			// so while we do use the change event, we still are stuck with the blur listener to detect other such changes.
-			if (  ! readOnly ) {
+			if (  ! readOnly && ! ignoreDataChangesUntilReady ) {
 				String data = ckEditor.getData();
 				if ( ! data.equals(dataBeforeEdit) ) {
 					clientToServer.updateVariable(paintableId, VAR_TEXT, data, false);
@@ -347,6 +374,8 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 	// Listener callback
 	@Override
 	public void onInstanceReady() {
+		ckEditorIsReady = true;
+
 		ckEditor.instanceReady(this);
 		
 		if ( writerRules != null ) {
@@ -354,12 +383,10 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 			for( String tagName : tagNameSet ) {
 				ckEditor.setWriterRules(tagName, writerRules.get(tagName));
 			}
-			writerRules = null; // don't need them anymore
 		}
 		
 		if ( writerIndentationChars != null ) {
 			ckEditor.setWriterIndentationChars(writerIndentationChars);
-			writerIndentationChars = null;
 		}
 		
 		if ( keystrokeMappings != null ) {
@@ -367,21 +394,17 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 			for( Integer keystroke : keystrokeSet ) {
 				ckEditor.setKeystroke(keystroke, keystrokeMappings.get(keystroke));
 			}
-			keystrokeMappings = null; // don't need them anymore
 		}
 		
 		if ( protectedSourceList != null ) {
 			for( String regex : protectedSourceList ) {
 				ckEditor.pushProtectedSource(regex);
 			}
-			protectedSourceList = null;
 		}
 		
 		if ( dataBeforeEdit != null ) {
-			setEditorData();
+			setEditorData(dataBeforeEdit);
 		}
-				
-		ckEditorIsReady = true;
 		
 		if (setFocusAfterReady) {
 			setFocus(true);
@@ -406,7 +429,7 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 	// Listener callback
 	@Override
 	public void onChange() {
-		if ( ckEditor != null && ! readOnly ) {
+		if ( ckEditor != null && ! readOnly && ! ignoreDataChangesUntilReady ) {
 			String data = ckEditor.getData();
 			if ( ! data.equals(dataBeforeEdit) ) {
 				clientToServer.updateVariable(paintableId, VAR_TEXT, data, immediate);
@@ -419,7 +442,7 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 	@Override
 	public void onModeChange(String mode) {
 		if ( ckEditor != null ) {
-			if ( ! readOnly ) {
+			if ( ! readOnly && ! ignoreDataChangesUntilReady ) {
 				String data = ckEditor.getData();
 				if ( ! data.equals(dataBeforeEdit) ) {
 					clientToServer.updateVariable(paintableId, VAR_TEXT, data, true);
@@ -454,11 +477,9 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 	// Listener callback
 	@Override
 	public void onDataReady() {
-		if ( ckEditor != null ) {
-			if (resetDataBeforeEdit) {
-				dataBeforeEdit = ckEditor.getData(true);
-				resetDataBeforeEdit = false;
-			}
+		if ( ckEditorIsReady ) {
+			ignoreDataChangesUntilReady = false;
+			dataBeforeEdit = ckEditor.getData();
 			ckEditor.protectBody(protectedBody);
 		}
 	}
@@ -488,22 +509,14 @@ public class VCKEditorTextField extends Widget implements Paintable, CKEditorSer
 
 	@Override
 	protected void onLoad() {
-		if (widgetUnloaded) {
-			if (ckEditor == null && !viewWithoutEditor) {
-				loadEditor();
-			}
-			widgetUnloaded = false;
+		if ( ! viewWithoutEditor ) {
+			loadEditor();
 		}
 	}
 
 	@Override
 	protected void onUnload() {
-		if ( ckEditor != null ) {
-			ckEditor.destroy();
-			ckEditor = null;
-		}
-		ckEditorIsReady = false;
-		widgetUnloaded = true;
+		unloadEditor();
 	}
 
 	@Override

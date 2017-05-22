@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2013 Yozons, Inc.
+// Copyright (C) 2010-2017 Yozons, Inc.
 // CKEditor for Vaadin - Widget linkage for using CKEditor within a Vaadin application.
 //
 // This software is released under the Apache License 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
@@ -17,6 +17,8 @@ import java.util.Set;
 import org.vaadin.openesignforms.ckeditor.widgetset.client.ui.VCKEditorTextField;
 
 import com.vaadin.data.Property;
+import com.vaadin.data.Property.ConversionException;
+import com.vaadin.data.Property.ReadOnlyException;
 import com.vaadin.event.FieldEvents;
 import com.vaadin.event.FieldEvents.BlurEvent;
 import com.vaadin.event.FieldEvents.BlurListener;
@@ -35,7 +37,7 @@ import com.vaadin.ui.Component;
 public class CKEditorTextField extends AbstractField 
 	implements FieldEvents.BlurNotifier, FieldEvents.FocusNotifier, Component.Focusable  {
 	
-	private static final long serialVersionUID = -37444047694136727L;
+	private static final long serialVersionUID = -4416787199757304854L;
 
 	private CKEditorConfig config;
 	private String version = "unknown";
@@ -76,8 +78,16 @@ public class CKEditorTextField extends AbstractField
 	}
 	
 	@Override
+	public void setValue(Object newValue) throws ReadOnlyException, ConversionException {
+    	if ( newValue == null )
+    		newValue = "";
+    	super.setValue(newValue, false);  // will call setInternalValue
+    	requestRepaint();
+	}
+
+	@Override
 	protected void setInternalValue(Object newValue) {
-		super.setInternalValue(newValue);
+		super.setInternalValue(newValue==null?"":newValue);
     	textIsDirty = true;
     }
 	
