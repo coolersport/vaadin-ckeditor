@@ -17,8 +17,6 @@ import java.util.Set;
 import org.vaadin.openesignforms.ckeditor.widgetset.client.ui.VCKEditorTextField;
 
 import com.vaadin.data.Property;
-import com.vaadin.data.Property.ConversionException;
-import com.vaadin.data.Property.ReadOnlyException;
 import com.vaadin.event.FieldEvents;
 import com.vaadin.event.FieldEvents.BlurEvent;
 import com.vaadin.event.FieldEvents.BlurListener;
@@ -48,7 +46,9 @@ public class CKEditorTextField extends AbstractField
 	private boolean focusRequested = false;
 	protected LinkedList<VaadinSaveListener> vaadinSaveListenerList;
 
-	private boolean textIsDirty = true;
+	//textIsDirty flag doesn't work with Vaadin6
+	//on page refresh, value isn't sent to client component
+	//private boolean textIsDirty = true;
 
 	public CKEditorTextField() {
 		super.setValue("");
@@ -78,35 +78,20 @@ public class CKEditorTextField extends AbstractField
 	}
 	
 	@Override
-	public void setValue(Object newValue) throws ReadOnlyException, ConversionException {
+    public void setValue(Object newValue) throws Property.ReadOnlyException, Property.ConversionException {
     	if ( newValue == null )
     		newValue = "";
-    	super.setValue(newValue, false);  // will call setInternalValue
+    	super.setValue(newValue.toString(), false);
     	requestRepaint();
-	}
-
-	@Override
-	protected void setInternalValue(Object newValue) {
-		super.setInternalValue(newValue==null?"":newValue);
-    	textIsDirty = true;
     }
 	
-	@Override
-	protected void fireValueChange(boolean repaintIsNotNeeded) {
-		super.fireValueChange(repaintIsNotNeeded);
-		textIsDirty = true;
-	}
-
 	@Override
 	public void paintContent(PaintTarget target) throws PaintException {
 		super.paintContent(target);
 		
-		if(textIsDirty) {
-			Object currValueObject = getValue();
-			String currValue = currValueObject == null ? "" : currValueObject.toString();
-			target.addVariable(this, VCKEditorTextField.VAR_TEXT, currValue);
-			textIsDirty = false;
-		}
+		Object currValueObject = getValue();
+		String currValue = currValueObject == null ? "" : currValueObject.toString();
+		target.addVariable(this, VCKEditorTextField.VAR_TEXT, currValue);
 		
 		target.addAttribute(VCKEditorTextField.ATTR_READONLY, isReadOnly());
 		target.addAttribute(VCKEditorTextField.ATTR_VIEW_WITHOUT_EDITOR, isViewWithoutEditor());
@@ -269,12 +254,6 @@ public class CKEditorTextField extends AbstractField
 	@Override
     public void setHeight(String height) {
 		super.setHeight(height);
-	}
-
-	@Override
-	public void detach() {
-		super.detach();
-		textIsDirty = true;
 	}
 	
 	// Part of Focusable
