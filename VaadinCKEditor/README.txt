@@ -61,6 +61,10 @@ under the Creative Commons Attribution 3.0 License.
   CHANGELOG
   =========
 
+1.8.2-patch2 (23 May 2017)
+- Merged all changes to date from upstream master
+- Removed CKEditorTextField.textIsDirty flag as it doesn't work with Vaadin 6 on page refresh
+
 1.8.2-patch1 (18 May 2017)
 - Fixed https://github.com/OpenESignForms/vaadin-ckeditor/issues/60
 - Fixed https://github.com/OpenESignForms/vaadin-ckeditor/issues/61
