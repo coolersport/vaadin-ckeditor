@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Vaadin-License-Title: Apache 2.0
 Implementation-Title: CKEditor wrapper for Vaadin
-Implementation-Version: 1.8.2-patch2
+Implementation-Version: 1.8.2-patch3
 Vaadin-Widgetsets: org.vaadin.openesignforms.ckeditor.widgetset.Vaadin
  CKEditorWidgetset
 Vaadin-Package-Version: 1
