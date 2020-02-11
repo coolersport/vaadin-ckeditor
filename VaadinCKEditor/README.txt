@@ -1,5 +1,5 @@
 File: VaadinCKEditor/README.txt
-Last updated: 23 April 2013
+Last updated: 12 June 2013
 
   USING CKEDITOR FOR VAADIN IN YOUR APPLICATION
   =============================================
@@ -60,6 +60,10 @@ under the Creative Commons Attribution 3.0 License.
   
   CHANGELOG
   =========
+
+1.8.2-patch4 (12 June 2017)
+- Patch fix for 'view without editor' mode, and to fix going from SOURCE mode back to WYSIWYG mode not noting the 
+  changed editor contents.
 
 1.8.2-patch3 (29 May 2017)
 - Upgraded to CKEditor 4.7.0.
