@@ -60,6 +60,11 @@ under the Creative Commons Attribution 3.0 License.
   
   CHANGELOG
   =========
+1.8.2-patch5 (12 February 2020)
+- Upgraded to CKEditor 4.11.3.
+- Sync with upstream master commit 7ddd8111b38ae78949736879f2ac69e4cab49971
+	- Per issue 69 (https://github.com/OpenESignForms/vaadin-ckeditor/issues/69), changed the editor's DIV id to use
+	  'VCKE_paintableid' instead of just 'paintableid' which is just numbers.
 
 1.8.2-patch4 (12 June 2017)
 - Patch fix for 'view without editor' mode, and to fix going from SOURCE mode back to WYSIWYG mode not noting the 

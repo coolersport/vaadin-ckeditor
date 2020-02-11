@@ -60,6 +60,7 @@ public class VCKEditorTextField extends Widget
 
     /** The client side widget identifier */
     protected String paintableId;
+    protected String ckeditorContainerId = null;
 
     /** Reference to the server connection object. */
     protected ApplicationConnection clientToServer;
@@ -179,9 +180,10 @@ public class VCKEditorTextField extends Widget
         }
 
         // Save the client side identifier (paintable id) for the widget
-        if (!paintableId.equals(getElement().getId()))
-        {
-            getElement().setId(paintableId);
+        if ( ckeditorContainerId == null )
+            ckeditorContainerId = "VCKE_" + paintableId;
+        if ( ! ckeditorContainerId.equals(getElement().getId()) ) {
+            getElement().setId(ckeditorContainerId);
         }
 
         if (viewWithoutEditor)
@@ -348,7 +350,7 @@ public class VCKEditorTextField extends Widget
                 @Override
                 public void execute()
                 {
-                    ckEditor = (CKEditor) CKEditorService.loadEditor(paintableId, VCKEditorTextField.this, inPageConfig,
+                    ckEditor = (CKEditor) CKEditorService.loadEditor(ckeditorContainerId, VCKEditorTextField.this, inPageConfig,
                         VCKEditorTextField.super.getOffsetWidth(), VCKEditorTextField.super.getOffsetHeight());
                     ckEditorIsBeingLoaded = false; // Don't need this as we have ckEditor set now.
                 }
@@ -357,19 +359,20 @@ public class VCKEditorTextField extends Widget
     }
 
     // Listener callback
+    // Called if the user clicks the (Vaadin) Save button. 
     @Override
     public void onSave()
     {
+        //logState("onSave() - readOnly: " + readOnly);
         if (ckEditorIsReady && !readOnly)
         {
-            // Called if the user clicks the Save button. 
+            ignoreDataChangesUntilReady = false; // If they give us data by saving, we don't ignore whatever it is
             String data = ckEditor.getData();
             if (!data.equals(dataBeforeEdit))
             {
                 clientToServer.updateVariable(paintableId, VAR_TEXT, data, false);
                 dataBeforeEdit = data; // update our image since we sent it to the server
             }
-            ignoreDataChangesUntilReady = false; // If they give us data by saving, we don't ignore whatever it is
             clientToServer.updateVariable(paintableId, VAR_VAADIN_SAVE_BUTTON_PRESSED, "", false); // inform that the button was pressed too
             clientToServer.sendPendingVariableChanges(); // ensure anything queued up goes now on SAVE
         }

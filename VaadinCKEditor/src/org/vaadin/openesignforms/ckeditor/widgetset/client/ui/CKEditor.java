@@ -172,7 +172,7 @@ public class CKEditor extends JavaScriptObject {
 	/*-{
 	 	if (this.document) {
 	 		if (this.document.getBody()) {
-	 			this.document.getBody().$.contentEditable = !protectBody;
+	 			this.document.getBody().$.contentEditable = !this.readOnly && !protectBody;
 	 		}
 	 	}
 	}-*/;
