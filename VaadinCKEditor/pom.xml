@@ -1,0 +1,112 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<artifactId>com.genix.platform3</artifactId>
+		<groupId>com.genix.platform3</groupId>
+		<version>2.5-SNAPSHOT</version>
+	</parent>
+
+	<groupId>org.vaadin.addons</groupId>
+	<artifactId>ckeditor-wrapper-for-vaadin</artifactId>
+	<version>1.8.2-patch5</version>
+	<name>ckeditor-wrapper-for-vaadin</name>
+
+	<dependencies>
+		<!-- Vaadin -->
+		<dependency>
+			<groupId>com.vaadin</groupId>
+			<artifactId>vaadin</artifactId>
+			<version>${vaadin.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.gwt</groupId>
+			<artifactId>gwt-user</artifactId>
+			<version>${gwt.version}</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<sourceDirectory>src</sourceDirectory>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Vaadin-Package-Version>1</Vaadin-Package-Version>
+							<Vaadin-Widgetsets>true</Vaadin-Widgetsets>
+							<Vaadin-License-Title>Apache 2.0</Vaadin-License-Title>
+							<Implementation-Title>CKEditor wrapper for Vaadin</Implementation-Title>
+							<Implementation-Vendor>Yozons Inc.</Implementation-Vendor>
+						</manifestEntries>
+					</archive>
+					<excludes>
+						<exclude>VAADIN/**</exclude>
+						<exclude>**/gwt-unitCache*</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>gwt-maven-plugin</artifactId>
+				<version>${gwt.version}</version>
+				<configuration>
+					<runTarget>/</runTarget>
+					<hostedWebapp>${basedir}/src/test/widgetwebapp</hostedWebapp>
+					<debugSuspend>false</debugSuspend>
+					<port>8080</port>
+				</configuration>
+				<executions>
+					<execution>
+						<configuration>
+							<webappDirectory>${project.build.directory}/classes/VAADIN/widgetsets</webappDirectory>
+							<extraJvmArgs>-Xmx512M -Xss1024k</extraJvmArgs>
+							<logLevel>TRACE</logLevel>
+						</configuration>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>${resources.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>copy-resources</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/classes</outputDirectory>
+							<resources>
+								<resource>
+									<directory>src</directory>
+									<filtering>false</filtering>
+									<includes>
+										<include>/org/vaadin/**/*</include>
+									</includes>
+								</resource>
+								<resource>
+									<directory>${basedir}</directory>
+									<filtering>false</filtering>
+									<includes>
+										<include>*.txt</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>
